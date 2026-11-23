@@ -1,0 +1,28 @@
+[exportdiff 02:03:43] 5000 images, 128 calibration images, targets ['onnx', 'onnx-int8', 'onnx-int8-naive', 'openvino', 'openvino-default', 'openvino-int8']
+[exportdiff 02:03:43] reference pass torch (batch 1)
+[exportdiff 02:03:44] reference pass torch_rerun (batch 1)
+[exportdiff 02:03:44] reference pass torch_batch8 (batch 8)
+[exportdiff 02:03:44] reference pass torch_batch8_shuffled (batch 8)
+[exportdiff 02:03:44] target onnx
+[exportdiff 02:03:44] target onnx-int8
+[exportdiff 02:03:44] target onnx-int8-naive
+[exportdiff 02:03:44] target openvino
+[exportdiff 02:03:44] target openvino-default
+[exportdiff 02:03:44] target openvino-int8
+[exportdiff 02:03:46] onnx: 0/5000 images changed (0.00%), above noise False
+[exportdiff 02:03:46] onnx-int8: 2756/5000 images changed (55.12%), above noise True
+[exportdiff 02:03:46] onnx-int8-naive: 4909/5000 images changed (98.18%), above noise True
+[exportdiff 02:03:46] openvino: 0/5000 images changed (0.00%), above noise False
+[exportdiff 02:03:47] openvino-default: 631/5000 images changed (12.62%), above noise True
+[exportdiff 02:03:47] openvino-int8: 1825/5000 images changed (36.50%), above noise True
+[exportdiff 02:04:10] mAP torch: 38.73 (mAP50 54.24)
+[exportdiff 02:04:31] mAP torch_rerun: 38.73 (mAP50 54.24)
+[exportdiff 02:04:54] mAP torch_batch8: 38.73 (mAP50 54.24)
+[exportdiff 02:05:15] mAP torch_batch8_shuffled: 38.73 (mAP50 54.24)
+[exportdiff 02:05:37] mAP onnx: 38.73 (mAP50 54.24)
+[exportdiff 02:05:59] mAP onnx-int8: 37.50 (mAP50 52.83)
+[exportdiff 02:05:59] mAP onnx-int8-naive: 0.00 (mAP50 0.00)
+[exportdiff 02:06:22] mAP openvino: 38.73 (mAP50 54.24)
+[exportdiff 02:06:45] mAP openvino-default: 38.74 (mAP50 54.24)
+[exportdiff 02:07:08] mAP openvino-int8: 38.55 (mAP50 54.01)
+[exportdiff 02:07:08] wrote /out/y11full/result.json and /out/y11full/report.html
