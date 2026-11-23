@@ -10,3 +10,6 @@ work/
 *.onnx
 *.pt
 *_openvino_model/
+results/*/gallery/
+results/*/report.html
+work_repeat/

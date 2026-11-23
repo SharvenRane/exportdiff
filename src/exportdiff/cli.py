@@ -26,6 +26,17 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--probe", type=int, default=DEFAULT_PROBE, help="probe set size")
     r.add_argument("--worst", type=int, default=12, help="images drawn per target in the report")
     r.add_argument("--seed", type=int, default=0)
+
+    a = sub.add_parser("analyze", help="hard margin sensitivity and paired bootstrap mAP intervals from a cached run")
+    a.add_argument("--runs", required=True, help="cached detections folder, for example work/runs/yolo11n_all")
+    a.add_argument("--targets", required=True, help="comma separated target names to analyse")
+    a.add_argument("--ann", help="COCO instances json; without it only the sensitivity table is computed")
+    a.add_argument("--thresholds", default="0.25,0.30", help="deployment confidence thresholds")
+    a.add_argument("--margins", default="0.02,0.05,0.10", help="hard flip margins above the threshold")
+    a.add_argument("--boot", type=int, default=1000, help="bootstrap resamples of the images")
+    a.add_argument("--jobs", type=int, default=1, help="worker processes for the bootstrap")
+    a.add_argument("--seed", type=int, default=0)
+    a.add_argument("--out", required=True, help="output json")
     return p
 
 
@@ -44,6 +55,18 @@ def main(argv=None) -> int:
                      worst=a.worst, seed=a.seed)
         res = run(cfg)
         return 1 if res["errors"] else 0
+    if a.cmd == "analyze":
+        from .analyze import analyze
+        from .report import write_json
+
+        floats = lambda s: [float(x) for x in s.split(",") if x.strip()]
+        res = analyze(a.runs, [t.strip() for t in a.targets.split(",") if t.strip()], a.ann,
+                      floats(a.thresholds), floats(a.margins), a.boot, a.seed, a.jobs)
+        from pathlib import Path
+
+        write_json(res, Path(a.out))
+        print(f"wrote {a.out}")
+        return 0
     return 2
 
 

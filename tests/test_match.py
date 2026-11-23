@@ -102,3 +102,21 @@ def test_hard_change_split():
                            dets([[0, 0, 10, 10]], [2], scores=np.array([0.26])))
     assert relabel.hard(0.25, 0.05)
     assert not diff_answers(ref, ref).hard(0.25, 0.05)
+
+
+def test_assignment_prefers_all_valid_pairs_over_more_total_iou():
+    # 1D boxes of height 10. Raw total IoU prefers A-Y (1.0) + B-X (0.25, invalid) = 1.25 over the
+    # all valid A-X (0.538) + B-Y (0.538) = 1.077. Every reference box has a valid partner, so the
+    # answer did not change; the old matcher reported a vanished and an appeared box here.
+    ref = dets([[0, 0, 10, 10], [-3, 0, 7, 10]], [1, 1])
+    new = dets([[3, 0, 13, 10], [0, 0, 10, 10]], [1, 1])
+    d = diff_answers(ref, new, 0.5)
+    assert not d.flipped
+    assert sorted((r, c) for r, c, _ in d.pairs) == [(0, 0), (1, 1)]
+
+
+def test_assignment_still_maximises_iou_among_valid_pairs():
+    ref = dets([[0, 0, 10, 10]], [1])
+    new = dets([[1, 0, 11, 10], [0, 0, 10, 10]], [1, 1])
+    d = diff_answers(ref, new, 0.5)
+    assert d.pairs[0][:2] == (0, 1) and d.appeared == [0]

@@ -5,7 +5,8 @@ Definitions
 answer      the set of (class, box) a deployed detector reports for one image: every box whose score
             is at or above the deployment confidence threshold, after the shared decoding and NMS.
 match       class agnostic one to one assignment between the reference answer and the export answer
-            that maximises total IoU (Hungarian), keeping only pairs with IoU >= the match IoU (0.5).
+            (Hungarian) that maximises the number of pairs with IoU >= the match IoU (0.5), then their
+            total IoU; only those pairs count as matched.
 flip        an image whose answer changed: at least one box appeared (export only), vanished
             (reference only) or changed class (matched pair with different class labels).
 """
@@ -101,7 +102,7 @@ class AnswerDiff:
 
 
 def diff_answers(ref: Detections, new: Detections, match_iou: float = DEFAULT_MATCH_IOU) -> AnswerDiff:
-    """Hungarian match (class agnostic, maximise IoU) and classify every unmatched or relabelled box.
+    """Hungarian match (class agnostic, most valid pairs, then most IoU) and classify every unmatched or relabelled box.
 
     Both inputs must already be the deployed answers (filtered at the confidence threshold).
     """
@@ -116,7 +117,13 @@ def diff_answers(ref: Detections, new: Detections, match_iou: float = DEFAULT_MA
         out.appeared_scores = [float(s) for s in new.scores]
         return out
     iou = iou_matrix(ref.boxes, new.boxes)
-    rows, cols = linear_sum_assignment(-iou)
+    # Maximise the number of valid pairs (IoU >= match_iou) first and their total IoU second.
+    # Maximising raw total IoU alone can prefer an assignment that contains an invalid pair over
+    # one where every pair is valid, which reports a flip on an image whose answer did not change.
+    # Each valid pair is worth more than any sum of IoUs (at most min(m, n)), invalid pairs nothing.
+    valid = iou >= match_iou
+    weight = np.where(valid, min(m, n) + 1.0 + iou, 0.0)
+    rows, cols = linear_sum_assignment(-weight)
     matched_r, matched_c = set(), set()
     for r, c in zip(rows.tolist(), cols.tolist()):
         if iou[r, c] >= match_iou:

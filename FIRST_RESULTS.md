@@ -5,8 +5,8 @@ Ultralytics detectors (YOLO11n and YOLO26n, weights downloaded by Ultralytics 8.
 v8.4.0 asset release), CPU only, on one Linux box (AMD Ryzen 7 9700X, 8 threads, Docker).
 
 Software: torch 2.15.0 CPU, onnxruntime 1.32.0, openvino 2026.4.1, nncf 3.4.0, pycocotools 2.0.11.
-Raw outputs: `results/y11full/` and `results/y26full/` (`result.json`, `report.html`, `gallery/`),
-logs and the exact run script in `results/logs/`.
+Raw outputs: `results/y11full/result.json` and `results/y26full/result.json`, logs and the exact
+run script in `results/logs/`. The HTML reports and their image galleries are kept out of git.
 
 ## Setup in one paragraph
 
@@ -123,3 +123,27 @@ more than 1 image in 5,000."*
 4. A low flip rate target (for example OpenVINO with an f16 hint, or ORT with graph optimisations
    off) to measure what the probe set catches when the effect is near 1%.
 5. Segmentation and pose matchers; `--fail-above` exit code for CI.
+
+## Update (2026-11-22, later the same day)
+
+Rechecked from the cached detections; nothing above was rerun except where stated.
+
+* **Matcher bug fixed.** The Hungarian step maximised raw total IoU and only then dropped pairs below
+  IoU 0.5, so it could choose an assignment with an invalid pair over one where every pair was valid
+  and report a flip on an unchanged image. It now maximises the number of valid pairs first, then
+  their IoU (regression test in `tests/test_match.py`). Effect on the tables above: YOLO11n ONNX
+  Runtime INT8 2756 to 2755 flips (hard 1931 to 1927), YOLO11n OpenVINO INT8 1825 to 1823 (hard 734
+  to 732), YOLO26n OpenVINO INT8 1800 to 1798 (hard 772 to 769), YOLO26n ONNX Runtime INT8 hard 1844
+  to 1842. Every other count is unchanged. The README carries the corrected numbers.
+* **Hard margin sensitivity** (0.02, 0.05, 0.10 at thresholds 0.25 and 0.30) and **paired bootstrap
+  intervals on the mAP change** (1,000 image resamples) are now in the README and in
+  `results/analysis_yolo11n.json`, `results/analysis_yolo26n.json` (`exportdiff analyze`). The
+  bootstrap point estimates reproduce the pycocotools numbers above exactly.
+* `exportdiff analyze` first failed on the naive ONNX INT8 run, which has no detections at all; a run
+  without detections now scores mAP 0, as pycocotools does, with a test.
+* **Repeat run.** The reference in a new process and OpenVINO INT8 on the same IR in a new process
+  were bitwise identical to the first runs for both models. Exporting OpenVINO INT8 again from
+  scratch gave different weights (NNCF is not deterministic here); the new export changed 36.12%
+  (YOLO11n) and 35.78% (YOLO26n) of answers against the reference, against 36.46% and 35.96% the
+  first time, with hard rates 14.76% and 15.06% against 14.64% and 15.38%. The two INT8 exports
+  disagree with each other on 19.5% and 20.0% of images. Details in `results/repeat_*.json`.
